@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+
 int main()
 {
-    printf("%d",1>5?1:5);
+    char a='A';
+    
+    printf("%c",a<'a'?a+32:a);
     system("pause");
     return 0;
 }
