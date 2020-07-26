@@ -48,24 +48,73 @@ int delsPWD(int id);
 int main()
 {
     char input[50]={0};
+    int i=0;
     if(init(0)){
         while (input[49]=='\0')
         {
             scanf("%s",input);
             if(input[1]!='\0' || input[0]<'1' || input[0]>'6')
                 continue;
-            printf("[%c]\n",input[0]);
+            // printf("[%c]\n",input[0]);
             if(input[0]=='6'){
                 input[49]='6';
             }else if (input[0]>'0' && input[0]<'4')
             {
-                
+                readINFO();
+                showPWD(0,0);
+                printf(">>请选择密码项：");
+                scanf("%d",&i);
+                printf("输入[%d]gL[%d]\n",i,gLen);
+                if (i>0 && i<=gLen){
+                    switch (input[0]){
+                    case '1':{
+                        initMENU();
+                        showPWD(i,1);
+                        break;
+                    }case '2':{
+                        showPWD(i,1);
+                        char buff[50]={0};
+                        printf("请输入要修改的密码：");
+                        scanf("%s",buff);
+                        initMENU();
+                        updtPWD(i,buff);
+                        break;
+                    }case '3':{
+                        initMENU();
+                        delsPWD(i);
+                        break;
+                    }default:
+                        break;
+                    }
+                }
             }else if (input[0]=='4')
             {
                 /* 新增密码 */
+                readINFO();
+                char buff[50]={0},buff2[50]={0};
+                printf("请输入用途：");
+                scanf("%s",&buff);
+                printf("请输入密码：");
+                scanf("%s",&buff2);
+                addsPWD(buff,buff2);
             }else if (input[0]=='5')
             {
-                /* code */
+                /* 导出密码 */
+                readINFO();
+                FILE*f=fopen("password.txt","w+");
+                if(f==NULL){
+                    printf("导出密码失败。\n");
+                }else
+                {
+                    PWDINFO*tmp=g_pPWD;
+                    while (tmp->NEXT)
+                    {
+                        tmp=tmp->NEXT;
+                        fprintf(f,"%s\t%s\n",tmp->used,tmp->pass);
+                    }
+                    printf("导出密码成功，请查看password.txt");
+                    fclose(f);f=NULL;
+                }
             }
         }
     }
@@ -129,12 +178,12 @@ int init(int mode){
 //------------初始化菜单项------------
 void initMENU(){
     system("cls");
-    printf("#%030s\n","#");
+    printf("#%048s\n","#");
     for (short i = 0; i < 6; i++)
     {
-        printf("#\t%-22s#\n",_MENU[i]);
+        printf("#\t\t%-32s#\n",_MENU[i]);
     }
-    printf("#%030s\n","#");
+    printf("#%048s\n","#");
 }
 //------------初始化密码本------------
 int initPWD(int mode){
@@ -178,8 +227,7 @@ int saveINFO(){
     //初始化变量
     PWDINFO *t=g_pPWD;gLen=0;
     //循环链表、插入文件
-    while (t->NEXT)
-    {
+    while (t->NEXT){
         t=t->NEXT;
         fwrite(t,PWDLEN,1,g_fp);
         gLen++;
@@ -204,11 +252,12 @@ int readINFO(){
             printf(">>>ERROR_读取文件失败。\n");
             err=0;
         }else if (len > 0){
-            printf(">>>读取后int=%d\n",len);
+            // printf(">>>读取后int=%d\n",len);
             err=initPWD(len);
         }
     }
     fclose(g_fp); g_fp = NULL;
+    if(err) gLen=len;
     return err;
 }
 //用于输出密码
@@ -221,7 +270,7 @@ int showPWD(int id,int isPWD){
     {
         tmp=tmp->NEXT;
         if(id==0 || id==tmp->id){
-                printf("#\t %d\t%-5s \t%-8s\t#\n",tmp->id,tmp->used,isPWD?tmp->pass:"");
+            printf("#\t %d\t%-5s \t%-8s\t#\n",tmp->id,tmp->used,isPWD?tmp->pass:"");
         }
     }
     printf("\n");
@@ -231,8 +280,7 @@ int showPWD(int id,int isPWD){
 int addsPWD(const char* used,const char* pass){
     int id=0,i=0;
     PWDINFO*tmp=g_pPWD,*t;
-    while (tmp->NEXT)
-    {
+    while (tmp->NEXT){
         tmp=tmp->NEXT;
         i++;
         // printf("i=[%d]\n",i);
@@ -242,8 +290,13 @@ int addsPWD(const char* used,const char* pass){
     t->id=id;
     strcpy(t->used,used);
     strcpy(t->pass,pass);
-    printf(">>>成功插入数据[%s]\n",t->used);
     tmp->NEXT=t;
+    if(saveINFO())
+        printf(">>>成功插入数据[%s]\n",t->used);
+    else{
+        printf(">>>失败插入数据\n");
+        return 0;
+    }
     return id;
 }
 //函数updt用于修改密码
